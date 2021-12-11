@@ -1,5 +1,6 @@
 # About this fork
 1. Fork from 3.1.1 tags.
+2. Change name to "ORMStarscream" for publish to cocoapods.
 
 [See original](https://github.com/daltoniam/Starscream)
 
