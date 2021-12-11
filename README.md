@@ -1,3 +1,8 @@
+# About this fork
+1. Fork from 3.1.1 tags.
+
+[See original](https://github.com/daltoniam/Starscream)
+
 ![starscream](https://raw.githubusercontent.com/daltoniam/starscream/assets/starscream.jpg)
 
 Starscream is a conforming WebSocket ([RFC 6455](http://tools.ietf.org/html/rfc6455)) client library in Swift.
