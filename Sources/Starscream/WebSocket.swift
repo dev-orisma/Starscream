@@ -889,8 +889,8 @@ open class WebSocket : NSObject, StreamDelegate, WebSocketClient, WSStreamDelega
         if let acceptKey = headers[headerWSAcceptName.lowercased()] {
             if acceptKey.count > 0 {
                 if headerSecKey.count > 0 {
-//                    let sha = "\(headerSecKey)258EAFA5-E914-47DA-95CA-C5AB0DC85B11".sha1Base64()
-                    let sha = "\(headerSecKey + obsfuscatedSalt)".sha512Base64()
+                    let sha = "\(headerSecKey)258EAFA5-E914-47DA-95CA-C5AB0DC85B11".sha1Base64()
+//                    let sha = "\(headerSecKey + obsfuscatedSalt)".sha512Base64()
                     if sha != acceptKey as String {
                         return -1
                     }
@@ -1347,23 +1347,16 @@ open class WebSocket : NSObject, StreamDelegate, WebSocketClient, WSStreamDelega
 }
 
 private extension String {
-//    func sha1Base64() -> String {
-//        let data = self.data(using: String.Encoding.utf8)!
-//        var digest = [UInt8](repeating: 0, count:Int(CC_SHA1_DIGEST_LENGTH))
-//        data.withUnsafeBytes { _ = CC_SHA1($0, CC_LONG(data.count), &digest) }
-//        return Data(bytes: digest).base64EncodedString()
-//    }
-        func sha512Base64() -> String {
-            let data = self.data(using: String.Encoding.utf8)!
+    func sha1Base64() -> String {
+        let data = self.data(using: String.Encoding.utf8)!
+        let digest: [UInt8] = data.withUnsafeBytes {
+        guard let bytes = $0.baseAddress?.assumingMemoryBound(to: UInt8.self) else {
+            return [UInt8]()
+        }
 
-            let digest: [UInt8] = data.withUnsafeBytes {
-            guard let bytes = $0.baseAddress?.assumingMemoryBound(to: UInt8.self) else {
-                return [UInt8]()
-            }
-
-            var digest = [UInt8](repeating: 0, count:Int(CC_SHA1_DIGEST_LENGTH))
-            CC_SHA512(bytes, CC_LONG(data.count), &digest)
-            return digest
+        var digest = [UInt8](repeating: 0, count:Int(CC_SHA1_DIGEST_LENGTH))
+            CC_SHA1(bytes, CC_LONG(data.count), &digest)
+        return digest
         }
         return Data(digest).base64EncodedString()
     }
