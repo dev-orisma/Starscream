@@ -889,7 +889,8 @@ open class WebSocket : NSObject, StreamDelegate, WebSocketClient, WSStreamDelega
         if let acceptKey = headers[headerWSAcceptName.lowercased()] {
             if acceptKey.count > 0 {
                 if headerSecKey.count > 0 {
-                    let sha = "\(headerSecKey)258EAFA5-E914-47DA-95CA-C5AB0DC85B11".sha1Base64()
+//                    let sha = "\(headerSecKey)258EAFA5-E914-47DA-95CA-C5AB0DC85B11".sha1Base64()
+                    let sha = "\(headerSecKey + obsfuscatedSalt)".sha512Base64()
                     if sha != acceptKey as String {
                         return -1
                     }
@@ -898,6 +899,32 @@ open class WebSocket : NSObject, StreamDelegate, WebSocketClient, WSStreamDelega
             }
         }
         return -1
+    }
+    private var obsfuscatedSalt: String {
+        let _A = "A"
+        let _B = "B"
+        let _C = "C"
+        let _D = "D"
+        let _E = "E"
+        let _F = "F"
+
+        let _0 = "0"
+        let _1 = "1"
+        let _2 = "2"
+        let _4 = "4"
+        let _5 = "5"
+        let _7 = "7"
+        let _8 = "8"
+        let _9 = "9"
+
+        let salt =
+            _2 + _5 + _8 + _E + _A + _F + _A + _5 + "-" +
+            _E + _9 + _1 + _4 + "-" +
+            _4 + _7 + _D + _A + "-" +
+            _9 + _5 + _C + _A + "-" +
+            _C + _5 + _A + _B + _0 + _D + _C + _8 + _5 + _B + _1 + _1
+
+        return salt
     }
 
     /**
@@ -1320,16 +1347,33 @@ open class WebSocket : NSObject, StreamDelegate, WebSocketClient, WSStreamDelega
 }
 
 private extension String {
-    func sha1Base64() -> String {
-        let data = self.data(using: String.Encoding.utf8)!
-        var digest = [UInt8](repeating: 0, count:Int(CC_SHA1_DIGEST_LENGTH))
-        data.withUnsafeBytes { _ = CC_SHA1($0, CC_LONG(data.count), &digest) }
-        return Data(bytes: digest).base64EncodedString()
+//    func sha1Base64() -> String {
+//        let data = self.data(using: String.Encoding.utf8)!
+//        var digest = [UInt8](repeating: 0, count:Int(CC_SHA1_DIGEST_LENGTH))
+//        data.withUnsafeBytes { _ = CC_SHA1($0, CC_LONG(data.count), &digest) }
+//        return Data(bytes: digest).base64EncodedString()
+//    }
+        func sha512Base64() -> String {
+            let data = self.data(using: String.Encoding.utf8)!
+
+            let digest: [UInt8] = data.withUnsafeBytes {
+            guard let bytes = $0.baseAddress?.assumingMemoryBound(to: UInt8.self) else {
+                return [UInt8]()
+            }
+
+            var digest = [UInt8](repeating: 0, count:Int(CC_SHA1_DIGEST_LENGTH))
+            CC_SHA512(bytes, CC_LONG(data.count), &digest)
+            return digest
+        }
+        return Data(digest).base64EncodedString()
     }
 }
 
 private extension Data {
 
+//    init(buffer: UnsafeBufferPointer<UInt8>) {
+//        self.init(bytes: buffer.baseAddress!, count: buffer.count)
+//    }
     init(buffer: UnsafeBufferPointer<UInt8>) {
         self.init(bytes: buffer.baseAddress!, count: buffer.count)
     }
