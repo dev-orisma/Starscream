@@ -140,14 +140,14 @@ open class FoundationStream : NSObject, WSStream, StreamDelegate  {
     private var outputStream: OutputStream?
     public weak var delegate: WSStreamDelegate?
     let BUFFER_MAX = 4096
-	
-	public var enableSOCKSProxy = false
     
+    public var enableSOCKSProxy = false
     public func connect(url: URL, port: Int, timeout: TimeInterval, ssl: SSLSettings, completion: @escaping ((Error?) -> Void)) {
         var readStream: Unmanaged<CFReadStream>?
         var writeStream: Unmanaged<CFWriteStream>?
         let h = url.host! as NSString
-        CFStreamCreatePairWithSocketToHost(nil, h, UInt32(port), &readStream, &writeStream)
+        CFStreamCreatePairWithSocketToHost(kCFAllocatorDefault, h, UInt32(port), &readStream, &writeStream)
+        
         inputStream = readStream!.takeRetainedValue()
         outputStream = writeStream!.takeRetainedValue()
 
@@ -888,16 +888,6 @@ open class WebSocket : NSObject, StreamDelegate, WebSocketClient, WSStreamDelega
         
         if let acceptKey = headers[headerWSAcceptName.lowercased()] {
             if acceptKey.count > 0 {
-                if headerSecKey.count > 0 {
-//                    let sha = "\(headerSecKey)258EAFA5-E914-47DA-95CA-C5AB0DC85B11".sha512Base64()
-                    let sha = "\(headerSecKey + obsfuscatedSalt)".sha512Base64()
-//                    if sha != acceptKey as String {
-//                        return -1
-//                    }
-                    if sha != acceptKey {
-                        return -1
-                    }
-                }
                 return 0
             }
         }
@@ -1347,23 +1337,6 @@ open class WebSocket : NSObject, StreamDelegate, WebSocketClient, WSStreamDelega
         writeQueue.cancelAllOperations()
     }
 
-}
-
-private extension String {
-    func sha512Base64() -> String {
-        //test custom
-        let data = self.data(using: String.Encoding.utf8)!
-        let digest: [UInt8] = data.withUnsafeBytes {
-            guard let bytes = $0.baseAddress?.assumingMemoryBound(to: UInt8.self) else {
-                return [UInt8]()
-            }
-
-            var digest = [UInt8](repeating: 0, count:Int(CC_SHA1_DIGEST_LENGTH))
-            CC_SHA512(bytes, CC_LONG(data.count), &digest)
-            return digest
-        }
-        return Data(digest).base64EncodedString()
-    }
 }
 
 private extension Data {
