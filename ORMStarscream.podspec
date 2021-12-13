@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = "ORMStarscream"
-  s.version      = "3.1.5"
+  s.version      = "3.1.6"
   s.summary      = "A conforming WebSocket RFC 6455 client library in Swift."
   s.homepage     = "https://github.com/dev-orisma/dev-orm-Starscream"
   s.license      = 'Apache License, Version 2.0'
