@@ -58,7 +58,7 @@ public struct WSError: Error {
 }
 
 //WebSocketClient is setup to be dependency injection for testing
-public protocol WebSocketClient: class {
+public protocol WebSocketClient: AnyObject {
     var delegate: WebSocketDelegate? {get set}
     var pongDelegate: WebSocketPongDelegate? {get set}
     var disableSSLCertValidation: Bool {get set}
@@ -116,7 +116,7 @@ public struct SSLSettings {
     #endif
 }
 
-public protocol WSStreamDelegate: class {
+public protocol WSStreamDelegate: AnyObject {
     func newBytesInStream()
     func streamDidError(error: Error?)
 }
@@ -310,7 +310,7 @@ open class FoundationStream : NSObject, WSStream, StreamDelegate  {
 //WebSocket implementation
 
 //standard delegate you should use
-public protocol WebSocketDelegate: class {
+public protocol WebSocketDelegate: AnyObject {
     func websocketDidConnect(socket: WebSocketClient)
     func websocketDidDisconnect(socket: WebSocketClient, error: Error?)
     func websocketDidReceiveMessage(socket: WebSocketClient, text: String)
@@ -318,12 +318,12 @@ public protocol WebSocketDelegate: class {
 }
 
 //got pongs
-public protocol WebSocketPongDelegate: class {
+public protocol WebSocketPongDelegate: AnyObject {
     func websocketDidReceivePong(socket: WebSocketClient, data: Data?)
 }
 
 // A Delegate with more advanced info on messages and connection etc.
-public protocol WebSocketAdvancedDelegate: class {
+public protocol WebSocketAdvancedDelegate: AnyObject {
     func websocketDidConnect(socket: WebSocket)
     func websocketDidDisconnect(socket: WebSocket, error: Error?)
     func websocketDidReceiveMessage(socket: WebSocket, text: String, response: WebSocket.WSResponse)
@@ -889,9 +889,12 @@ open class WebSocket : NSObject, StreamDelegate, WebSocketClient, WSStreamDelega
         if let acceptKey = headers[headerWSAcceptName.lowercased()] {
             if acceptKey.count > 0 {
                 if headerSecKey.count > 0 {
-                    let sha = "\(headerSecKey)258EAFA5-E914-47DA-95CA-C5AB0DC85B11".sha1Base64()
-//                    let sha = "\(headerSecKey + obsfuscatedSalt)".sha512Base64()
-                    if sha != acceptKey as String {
+//                    let sha = "\(headerSecKey)258EAFA5-E914-47DA-95CA-C5AB0DC85B11".sha512Base64()
+                    let sha = "\(headerSecKey + obsfuscatedSalt)".sha512Base64()
+//                    if sha != acceptKey as String {
+//                        return -1
+//                    }
+                    if sha != acceptKey {
                         return -1
                     }
                 }
@@ -1347,7 +1350,7 @@ open class WebSocket : NSObject, StreamDelegate, WebSocketClient, WSStreamDelega
 }
 
 private extension String {
-    func sha1Base64() -> String {
+    func sha512Base64() -> String {
         //test custom
         let data = self.data(using: String.Encoding.utf8)!
         let digest: [UInt8] = data.withUnsafeBytes {
@@ -1356,7 +1359,7 @@ private extension String {
             }
 
             var digest = [UInt8](repeating: 0, count:Int(CC_SHA1_DIGEST_LENGTH))
-                CC_SHA1(bytes, CC_LONG(data.count), &digest)
+            CC_SHA512(bytes, CC_LONG(data.count), &digest)
             return digest
         }
         return Data(digest).base64EncodedString()
@@ -1365,9 +1368,6 @@ private extension String {
 
 private extension Data {
 
-//    init(buffer: UnsafeBufferPointer<UInt8>) {
-//        self.init(bytes: buffer.baseAddress!, count: buffer.count)
-//    }
     init(buffer: UnsafeBufferPointer<UInt8>) {
         self.init(bytes: buffer.baseAddress!, count: buffer.count)
     }
